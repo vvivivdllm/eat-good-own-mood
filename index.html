@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>個人化活動與 BMI 記錄器</title>
+
+  <!-- Tailwind CSS (for styling) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-gradient-to-b from-white to-slate-50 text-slate-800">
+  <!-- Mount point for your app -->
+  <div id="fitness-root"></div>
+
+  <!-- React + ReactDOM -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <!-- Babel (lets us write JSX directly in browser) -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Your BMI tracker code -->
+  <script type="text/babel">
+    function FitnessProfileBuilder() {
+      const [height, setHeight] = React.useState("");
+      const [weight, setWeight] = React.useState("");
+      const [target, setTarget] = React.useState("");
+      const [sex, setSex] = React.useState("female");
+      const [history, setHistory] = React.useState(() => {
+        try {
+          return JSON.parse(localStorage.getItem("fitness_history") || "[]");
+        } catch {
+          return [];
+        }
+      });
+
+      const bmi = React.useMemo(() => {
+        const h = parseFloat(height);
+        const w = parseFloat(weight);
+        if (!h || !w) return null;
+        return +(w / Math.pow(h / 100, 2)).toFixed(1);
+      }, [height, weight]);
+
+      const bmiCat = bmi == null ? "—"
+        : bmi < 18.5 ? "偏瘦"
+        : bmi < 25 ? "正常"
+        : bmi < 30 ? "過重"
+        : bmi < 35 ? "肥胖 (I)"
+        : bmi < 40 ? "肥胖 (II)"
+        : "重度肥胖 (III)";
+
+      const delta = target && weight ? (target - weight).toFixed(1) : null;
+
+      function saveSnapshot() {
+        if (!height || !weight) {
+          alert("請先輸入身高同體重！");
+          return;
+        }
+        const snap = {
+          id: Date.now(),
+          sex,
+          height,
+          weight,
+          target,
+          bmi,
+          bmiCat,
+          time: new Date().toLocaleString()
+        };
+        const next = [snap, ...history];
+        setHistory(next);
+        localStorage.setItem("fitness_history", JSON.stringify(next));
+      }
+
+      return (
+        <div className="mx-auto max-w-3xl p-6">
+          <h1 className="text-2xl font-semibold mb-6">👤 個人化活動與 BMI 記錄器</h1>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div>
+              <label className="block text-sm mb-1">身高 (cm)</label>
+              <input className="w-full border rounded-xl px-3 py-2"
+                type="number" value={height} onChange={e => setHeight(e.target.value)} />
+            </div>
+            <div>
+              <label className="block text-sm mb-1">體重 (kg)</label>
+              <input className="w-full border rounded-xl px-3 py-2"
+                type="number" value={weight} onChange={e => setWeight(e.target.value)} />
+            </div>
+            <div>
+              <label className="block text-sm mb-1">目標體重 (kg)</label>
+              <input className="w-full border rounded-xl px-3 py-2"
+                type="number" value={target} onChange={e => setTarget(e.target.value)} />
+            </div>
+          </div>
+
+          <div classN
